@@ -158,10 +158,12 @@ COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 # COPY eecsCA_v3.crt /etc/ssl/ 
 # COPY sssd.conf /etc/sssd/ 
 # COPY common* /etc/pam.d/ 
-# RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
+# RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* &&
+# echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >>
+# /etc/passwd && echo "da:x:2343:" >> /etc/group &&
+# mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
 
-
-RUN 
+ 
 EXPOSE 25 587 143 465 993 110 995 4190
 
 CMD supervisord -c /etc/supervisor/supervisord.conf
