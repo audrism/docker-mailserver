@@ -23,6 +23,7 @@ RUN apt-get update -q --fix-missing && \
     binutils \
     sssd \
     sssd-tools \
+    sudo \
     bzip2 \
     ca-certificates \
     cabextract \
@@ -92,9 +93,9 @@ RUN apt-get update -q --fix-missing && \
   update-locale && \
   rm -f /etc/cron.weekly/fstrim
 
-RUN echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris
+RUN echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris 
+echo "$i ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$i
 
-USER audris
 
 RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam && \
   chmod 644 /etc/clamav/freshclam.conf && \
@@ -152,7 +153,7 @@ USER amavis
 RUN razor-admin -create && \
   razor-admin -register && \
   pyzor discover
-USER audris
+
 
 # Configure DKIM (opendkim)
 # DKIM config files
@@ -209,11 +210,12 @@ COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 COPY eecsCA_v3.crt /etc/ssl/ 
 COPY sssd.conf /etc/sssd/ 
 COPY common* /etc/pam.d/ 
-RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* 
+RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
+
 
 EXPOSE 25 587 143 465 993 110 995 4190
 
 CMD supervisord -c /etc/supervisor/supervisord.conf
 
 ADD target/filebeat.yml.tmpl /etc/filebeat/filebeat.yml.tmpl
-USER audris:da
+
