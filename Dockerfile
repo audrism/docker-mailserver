@@ -1,6 +1,9 @@
 FROM ubuntu:16.04
 MAINTAINER Audris Mockus (fork of tvial)
 
+RUN useradd -r -u 22923 root
+USER root
+
 ENV DEBIAN_FRONTEND noninteractive
 ENV VIRUSMAILS_DELETE_DELAY=7
 ENV ONE_DIR=0
@@ -100,7 +103,7 @@ RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam 
   sed -i 's/Foreground false/Foreground true/g' /etc/clamav/clamd.conf && \
   sed -i 's/AllowSupplementaryGroups false/AllowSupplementaryGroups true/g' /etc/clamav/clamd.conf && \
   mkdir /var/run/clamav && \
-  chown -R clamav:da /var/run/clamav
+  chown -R clamav:root /var/run/clamav
 
 # Configures Dovecot
 COPY target/dovecot/auth-passwdfile.inc target/dovecot/??-*.conf /etc/dovecot/conf.d/
@@ -207,7 +210,8 @@ COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 COPY eecsCA_v3.crt /etc/ssl/ 
 COPY sssd.conf /etc/sssd/ 
 COPY common* /etc/pam.d/ 
-RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
+RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common*
+### && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
 
 
 EXPOSE 25 587 143 465 993 110 995 4190
