@@ -94,7 +94,7 @@ RUN apt-get update -q --fix-missing && \
   rm -f /etc/cron.weekly/fstrim
 
 RUN echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris 
-echo "$i ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$i
+
 
 
 RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam && \
