@@ -93,7 +93,6 @@ RUN apt-get update -q --fix-missing && \
   update-locale && \
   rm -f /etc/cron.weekly/fstrim
 
-
 RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam && \
   chmod 644 /etc/clamav/freshclam.conf && \
   freshclam && \
@@ -126,6 +125,12 @@ COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/l
 COPY target/opendkim/opendkim.conf /etc/opendkim.conf
 COPY target/opendkim/default-opendkim /etc/default/opendkim
 
+# Configure DMARC (opendmarc)
+COPY target/opendmarc/opendmarc.conf /etc/opendmarc.conf
+COPY target/opendmarc/default-opendmarc /etc/default/opendmarc
+COPY target/opendmarc/ignore.hosts /etc/opendmarc/ignore.hosts
+
+
 # Configuring Logs
 RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
   mkdir -p /var/log/mail && \
@@ -149,7 +154,8 @@ RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
 RUN curl -s https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x3-cross-signed.pem
 
 COPY ./target/bin /usr/local/bin
-COPY ./target/check-for-changes.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
+COPY ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/fail2ban-wrapper.sh ./target/postfix-wrapper.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
+
 
 # Configure supervisor
 COPY target/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
