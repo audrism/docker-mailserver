@@ -94,14 +94,6 @@ RUN apt-get update -q --fix-missing && \
   rm -f /etc/cron.weekly/fstrim
 
 
-RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam && \
-  chmod 644 /etc/clamav/freshclam.conf && \
-  freshclam && \
-  sed -i 's/Foreground false/Foreground true/g' /etc/clamav/clamd.conf && \
-  sed -i 's/AllowSupplementaryGroups false/AllowSupplementaryGroups true/g' /etc/clamav/clamd.conf && \
-  mkdir /var/run/clamav && \
-  chown -R clamav:root /var/run/clamav
-
 # Configures Dovecot
 COPY target/dovecot/auth-passwdfile.inc target/dovecot/??-*.conf /etc/dovecot/conf.d/
 RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/etc\/dovecot\/protocols\.d/g' /etc/dovecot/dovecot.conf && \
@@ -117,98 +109,33 @@ RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/e
   mkdir /usr/lib/dovecot/sieve-filter && \
   chmod 755 /usr/lib/dovecot/sieve-filter
 
-# Configures LDAP
-COPY target/dovecot/dovecot-ldap.conf.ext /etc/dovecot
-COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/ldap-aliases.cf target/postfix/ldap-domains.cf /etc/postfix/
-
-# Enables Spamassassin CRON updates and update hook for supervisor
-RUN sed -i -r 's/^(CRON)=0/\1=1/g' /etc/default/spamassassin && \
-    sed -i -r 's/^\$INIT restart/supervisorctl restart amavis/g' /etc/spamassassin/sa-update-hooks.d/amavisd-new
-
-# Enables Postgrey
-COPY target/postgrey/postgrey /etc/default/postgrey
-COPY target/postgrey/postgrey.init /etc/init.d/postgrey
-RUN chmod 755 /etc/init.d/postgrey && \
-  mkdir /var/run/postgrey && \
-  chown postgrey:postgrey /var/run/postgrey
-
-# Enables Amavis
-COPY target/amavis/conf.d/* /etc/amavis/conf.d/
-RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode && \
-  adduser clamav amavis && \
-  adduser amavis clamav && \
-  useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker && \
-  (echo "0 4 * * * /usr/local/bin/virus-wiper" ; crontab -l) | crontab -
-
-# Configure Fail2ban
-COPY target/fail2ban/jail.conf /etc/fail2ban/jail.conf
-COPY target/fail2ban/filter.d/dovecot.conf /etc/fail2ban/filter.d/dovecot.conf
-RUN echo "ignoreregex =" >> /etc/fail2ban/filter.d/postfix-sasl.conf && mkdir /var/run/fail2ban
-
-# Enables Pyzor and Razor
-USER amavis
-RUN razor-admin -create && \
-  razor-admin -register && \
-  pyzor discover
-
 USER root
 # Configure DKIM (opendkim)
 # DKIM config files
 COPY target/opendkim/opendkim.conf /etc/opendkim.conf
 COPY target/opendkim/default-opendkim /etc/default/opendkim
 
-# Configure DMARC (opendmarc)
-COPY target/opendmarc/opendmarc.conf /etc/opendmarc.conf
-COPY target/opendmarc/default-opendmarc /etc/default/opendmarc
-COPY target/opendmarc/ignore.hosts /etc/opendmarc/ignore.hosts
-
-# Configure fetchmail
-COPY target/fetchmail/fetchmailrc /etc/fetchmailrc_general
-RUN sed -i 's/START_DAEMON=no/START_DAEMON=yes/g' /etc/default/fetchmail
-RUN mkdir /var/run/fetchmail && chown fetchmail /var/run/fetchmail
-
-# Configures Postfix
-COPY target/postfix/main.cf target/postfix/master.cf /etc/postfix/
-COPY target/postfix/sender_header_filter.pcre /etc/postfix/maps/sender_header_filter.pcre
-RUN echo "" > /etc/aliases && \
-  openssl dhparam -out /etc/postfix/dhparams.pem 2048
-
 # Configuring Logs
 RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
   mkdir -p /var/log/mail && \
   chown syslog:root /var/log/mail && \
-  touch /var/log/mail/clamav.log && \
-  chown -R clamav:root /var/log/mail/clamav.log && \
-  touch /var/log/mail/freshclam.log && \
-  chown -R clamav:root /var/log/mail/freshclam.log && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/rsyslog.d/50-default.conf && \
   sed -i -r 's|;auth,authpriv.none|;mail.none;mail.error;auth,authpriv.none|g' /etc/rsyslog.d/50-default.conf && \
-  sed -i -r 's|LogFile /var/log/clamav/|LogFile /var/log/mail/|g' /etc/clamav/clamd.conf && \
-  sed -i -r 's|UpdateLogFile /var/log/clamav/|UpdateLogFile /var/log/mail/|g' /etc/clamav/freshclam.conf && \
-  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-daemon && \
-  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-freshclam && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/logrotate.d/rsyslog && \
   # prevent syslog logrotate warnings \
   sed -i -e 's/\(printerror "could not determine current runlevel"\)/#\1/' /usr/sbin/invoke-rc.d && \
   sed -i -e 's/^\(POLICYHELPER=\).*/\1/' /usr/sbin/invoke-rc.d
 
-# Get LetsEncrypt signed certificate
-RUN curl -s https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x3-cross-signed.pem
 
 COPY ./target/bin /usr/local/bin
-# Start-mailserver script
-COPY ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/fail2ban-wrapper.sh ./target/postfix-wrapper.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/*
-
 # Configure supervisor
 COPY target/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 
-COPY eecsCA_v3.crt /etc/ssl/ 
-COPY sssd.conf /etc/sssd/ 
-COPY common* /etc/pam.d/ 
-RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
-
+# COPY eecsCA_v3.crt /etc/ssl/ 
+# COPY sssd.conf /etc/sssd/ 
+# COPY common* /etc/pam.d/ 
+# RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
 
 EXPOSE 25 587 143 465 993 110 995 4190
 
