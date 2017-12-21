@@ -94,6 +94,14 @@ RUN apt-get update -q --fix-missing && \
   rm -f /etc/cron.weekly/fstrim
 
 
+RUN echo "0 0,6,12,18 * * * /usr/bin/freshclam --quiet" > /etc/cron.d/freshclam && \
+  chmod 644 /etc/clamav/freshclam.conf && \
+  freshclam && \
+  sed -i 's/Foreground false/Foreground true/g' /etc/clamav/clamd.conf && \
+  sed -i 's/AllowSupplementaryGroups false/AllowSupplementaryGroups true/g' /etc/clamav/clamd.conf && \
+  mkdir /var/run/clamav && \
+  chown -R clamav:root /var/run/clamav
+  
 # Configures Dovecot
 COPY target/dovecot/auth-passwdfile.inc target/dovecot/??-*.conf /etc/dovecot/conf.d/
 RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/etc\/dovecot\/protocols\.d/g' /etc/dovecot/dovecot.conf && \
@@ -109,7 +117,10 @@ RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/e
   mkdir /usr/lib/dovecot/sieve-filter && \
   chmod 755 /usr/lib/dovecot/sieve-filter
 
-USER root
+# Configures LDAP
+COPY target/dovecot/dovecot-ldap.conf.ext /etc/dovecot
+COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/ldap-aliases.cf target/postfix/ldap-domains.cf /etc/postfix/
+
 # Configure DKIM (opendkim)
 # DKIM config files
 COPY target/opendkim/opendkim.conf /etc/opendkim.conf
@@ -119,12 +130,21 @@ COPY target/opendkim/default-opendkim /etc/default/opendkim
 RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
   mkdir -p /var/log/mail && \
   chown syslog:root /var/log/mail && \
+  touch /var/log/mail/clamav.log && \
+  chown -R clamav:root /var/log/mail/clamav.log && \
+  touch /var/log/mail/freshclam.log && \
+  chown -R clamav:root /var/log/mail/freshclam.log && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/rsyslog.d/50-default.conf && \
   sed -i -r 's|;auth,authpriv.none|;mail.none;mail.error;auth,authpriv.none|g' /etc/rsyslog.d/50-default.conf && \
+  sed -i -r 's|LogFile /var/log/clamav/|LogFile /var/log/mail/|g' /etc/clamav/clamd.conf && \
+  sed -i -r 's|UpdateLogFile /var/log/clamav/|UpdateLogFile /var/log/mail/|g' /etc/clamav/freshclam.conf && \
+  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-daemon && \
+  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-freshclam && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/logrotate.d/rsyslog && \
   # prevent syslog logrotate warnings \
   sed -i -e 's/\(printerror "could not determine current runlevel"\)/#\1/' /usr/sbin/invoke-rc.d && \
-  sed -i -e 's/^\(POLICYHELPER=\).*/\1/' /usr/sbin/invoke-rc.d
+  sed -i -e 's/^\(POLICYHELPER=\).*/\1/' /usr/sbin/invoke-rc.d && \
+  sed -i  's|^mail_location .*$|mail_location = mbox:/var/mail/%d/%n:INBOX=/var/mail/%d/%n/INBOX|' /etc/dovecot/conf.d/10-mail.conf
 
 RUN curl -s https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x3-cross-signed.pem
 
@@ -141,7 +161,7 @@ COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 # RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* && echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris && sed -i 's/^$/+ : audris : ALL/' /etc/security/access.conf && echo "audris ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/audris
 
 
-RUN sed -i  's|^mail_location .*$|mail_location = mbox:/var/mail/%d/%n:INBOX=/var/mail/%d/%n/INBOX|' /etc/dovecot/conf.d/10-mail.conf
+RUN 
 EXPOSE 25 587 143 465 993 110 995 4190
 
 CMD supervisord -c /etc/supervisor/supervisord.conf
