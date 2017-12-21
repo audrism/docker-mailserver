@@ -206,6 +206,7 @@ COPY eecsCA_v3.crt /etc/ssl/
 COPY sssd.conf /etc/sssd/ 
 COPY common* /etc/pam.d/ 
 RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* 
+RUN echo "audris:x:22923:2343:Audris Mockus:/home/audris:/bin/bash" >> /etc/passwd && echo "da:x:2343:" >> /etc/group && mkdir /home/audris && chown audris:da /home/audris
 
 EXPOSE 25 587 143 465 993 110 995 4190
 
