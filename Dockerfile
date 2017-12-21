@@ -1,5 +1,5 @@
 FROM ubuntu:16.04
-MAINTAINER Thomas VIAL
+MAINTAINER Audris Mockus (fork of tvial)
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV VIRUSMAILS_DELETE_DELAY=7
@@ -21,6 +21,8 @@ RUN apt-get update -q --fix-missing && \
     amavisd-new \
     arj \
     binutils \
+    sssd \
+    sssd-tools \
     bzip2 \
     ca-certificates \
     cabextract \
@@ -200,9 +202,14 @@ RUN chmod +x /usr/local/bin/*
 COPY target/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY target/supervisor/conf.d/* /etc/supervisor/conf.d/
 
+COPY eecsCA_v3.crt /etc/ssl/ 
+COPY sssd.conf /etc/sssd/ 
+COPY common* /etc/pam.d/ 
+RUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* 
+
 EXPOSE 25 587 143 465 993 110 995 4190
 
 CMD supervisord -c /etc/supervisor/supervisord.conf
 
 ADD target/filebeat.yml.tmpl /etc/filebeat/filebeat.yml.tmpl
-
+USER audris:da
