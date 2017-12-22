@@ -16,10 +16,11 @@ ENV SASLAUTHD_MECH_OPTIONS=""
 # Packages
 RUN apt-get update -q --fix-missing && \
   apt-get -y upgrade && \
-  apt-get -y install postfix && \
+#  apt-get -y install postfix && \
   apt-get -y install --no-install-recommends \
     amavisd-new \
     arj \
+    cron \
     binutils \
     sssd \
     sssd-tools \
