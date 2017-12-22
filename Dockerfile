@@ -27,8 +27,8 @@ RUN apt-get update -q --fix-missing && \
     bzip2 \
     ca-certificates \
     cabextract \
-    clamav \
-    clamav-daemon \
+    # clamav \
+    # clamav-daemon \
     cpio \
     curl \
     dovecot-core \
@@ -39,8 +39,8 @@ RUN apt-get update -q --fix-missing && \
     dovecot-pop3d \
     dovecot-sieve \
     ed \
-    fail2ban \
-    fetchmail \
+    # fail2ban \
+    # fetchmail \
     file \
     gamin \
     gzip \
@@ -56,7 +56,7 @@ RUN apt-get update -q --fix-missing && \
     nomarch \
     opendkim \
     opendkim-tools \
-    opendmarc \
+    # opendmarc \
     pax \
     p7zip-full \
     postfix-ldap \
@@ -69,9 +69,9 @@ RUN apt-get update -q --fix-missing && \
     rpm2cpio \
     rsyslog \
     sasl2-bin \
-    spamassassin \
+    # spamassassin \
     supervisor \
-    postgrey \
+    # postgrey \
     unrar-free \
     unzip \
     xz-utils \
@@ -81,7 +81,7 @@ RUN apt-get update -q --fix-missing && \
   echo "deb http://packages.elastic.co/beats/apt stable main" | tee -a /etc/apt/sources.list.d/beats.list && \
   apt-get update -q --fix-missing && \
   apt-get -y upgrade \
-    fail2ban \
+    # fail2ban \
     filebeat \
     && \
   apt-get autoclean && \
