@@ -166,14 +166,14 @@ COPY target/opendkim/default-opendkim /etc/default/opendkim
 RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
   mkdir -p /var/log/mail && \
   chown syslog:root /var/log/mail && \
-  touch /var/log/mail/clamav.log && \
+#  touch /var/log/mail/clamav.log && \
 #  chown -R clamav:root /var/log/mail/clamav.log && \
 #  touch /var/log/mail/freshclam.log && \
 #  chown -R clamav:root /var/log/mail/freshclam.log && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/rsyslog.d/50-default.conf && \
   sed -i -r 's|;auth,authpriv.none|;mail.none;mail.error;auth,authpriv.none|g' /etc/rsyslog.d/50-default.conf && \
 #  sed -i -r 's|LogFile /var/log/clamav/|LogFile /var/log/mail/|g' /etc/clamav/clamd.conf && \
-  sed -i -r 's|UpdateLogFile /var/log/clamav/|UpdateLogFile /var/log/mail/|g' /etc/clamav/freshclam.conf && \
+#  sed -i -r 's|UpdateLogFile /var/log/clamav/|UpdateLogFile /var/log/mail/|g' /etc/clamav/freshclam.conf && \
 #  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-daemon && \
 #  sed -i -r 's|/var/log/clamav|/var/log/mail|g' /etc/logrotate.d/clamav-freshclam && \
   sed -i -r 's|/var/log/mail|/var/log/mail/mail|g' /etc/logrotate.d/rsyslog && \
