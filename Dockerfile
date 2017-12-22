@@ -21,6 +21,7 @@ RUN apt-get update -q --fix-missing && \
     amavisd-new \
     arj \
     cron \
+    logrotate \
     binutils \
     sssd \
     sssd-tools \
