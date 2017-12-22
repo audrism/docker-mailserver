@@ -125,11 +125,11 @@ COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/l
 #    sed -i -r 's/^\$INIT restart/supervisorctl restart amavis/g' /etc/spamassassin/sa-update-hooks.d/amavisd-new
 
 # Enables Postgrey
-COPY target/postgrey/postgrey /etc/default/postgrey
-COPY target/postgrey/postgrey.init /etc/init.d/postgrey
-RUN chmod 755 /etc/init.d/postgrey && \
-  mkdir /var/run/postgrey && \
-  chown postgrey:postgrey /var/run/postgrey
+#COPY target/postgrey/postgrey /etc/default/postgrey
+#COPY target/postgrey/postgrey.init /etc/init.d/postgrey
+#RUN chmod 755 /etc/init.d/postgrey && \
+#  mkdir /var/run/postgrey && \
+#  chown postgrey:postgrey /var/run/postgrey
 
 # Enables Amavis
 COPY target/amavis/conf.d/* /etc/amavis/conf.d/
