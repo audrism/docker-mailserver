@@ -18,7 +18,7 @@ RUN apt-get update -q --fix-missing && \
   apt-get -y upgrade && \
 #  apt-get -y install postfix && \
   apt-get -y install --no-install-recommends \
-    amavisd-new \
+    #amavisd-new \
     arj \
     cron \
     logrotate \
@@ -120,7 +120,7 @@ RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/e
 
 # Configures LDAP
 COPY target/dovecot/dovecot-ldap.conf.ext /etc/dovecot
-COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/ldap-aliases.cf target/postfix/ldap-domains.cf /etc/postfix/
+#COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/ldap-aliases.cf target/postfix/ldap-domains.cf /etc/postfix/
 
 # Enables Spamassassin CRON updates and update hook for supervisor
 #RUN sed -i -r 's/^(CRON)=0/\1=1/g' /etc/default/spamassassin && \
@@ -134,10 +134,11 @@ COPY target/postfix/ldap-users.cf target/postfix/ldap-groups.cf target/postfix/l
 #  chown postgrey:postgrey /var/run/postgrey
 
 # Enables Amavis
-COPY target/amavis/conf.d/* /etc/amavis/conf.d/
-RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode && \
-  useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker && \
-  (echo "0 4 * * * /usr/local/bin/virus-wiper" ; crontab -l) | crontab -
+#COPY target/amavis/conf.d/* /etc/amavis/conf.d/
+#RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode && \
+RUN  useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker
+#    && \
+#  (echo "0 4 * * * /usr/local/bin/virus-wiper" ; crontab -l) | crontab -
 
 # Configure Fail2ban
 #COPY target/fail2ban/jail.conf /etc/fail2ban/jail.conf
