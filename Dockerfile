@@ -125,31 +125,31 @@ RUN sed -i -r 's/^(CRON)=0/\1=1/g' /etc/default/spamassassin && \
     sed -i -r 's/^\$INIT restart/supervisorctl restart amavis/g' /etc/spamassassin/sa-update-hooks.d/amavisd-new
 
 # Enables Postgrey
-COPY target/postgrey/postgrey /etc/default/postgrey
-COPY target/postgrey/postgrey.init /etc/init.d/postgrey
-RUN chmod 755 /etc/init.d/postgrey && \
-  mkdir /var/run/postgrey && \
-  chown postgrey:postgrey /var/run/postgrey
+#COPY target/postgrey/postgrey /etc/default/postgrey
+#COPY target/postgrey/postgrey.init /etc/init.d/postgrey
+#RUN chmod 755 /etc/init.d/postgrey && \
+#  mkdir /var/run/postgrey && \
+#  chown postgrey:postgrey /var/run/postgrey
 
 # Enables Amavis
-COPY target/amavis/conf.d/* /etc/amavis/conf.d/
-RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode && \
-  adduser clamav amavis && \
-  adduser amavis clamav && \
-  useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker && \
-  (echo "0 4 * * * /usr/local/bin/virus-wiper" ; crontab -l) | crontab -
+#COPY target/amavis/conf.d/* /etc/amavis/conf.d/
+#RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode && \
+#  adduser clamav amavis && \
+#  adduser amavis clamav && \
+#  useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker && \
+#  (echo "0 4 * * * /usr/local/bin/virus-wiper" ; crontab -l) | crontab -
 
 # Configure Fail2ban
-COPY target/fail2ban/jail.conf /etc/fail2ban/jail.conf
-COPY target/fail2ban/filter.d/dovecot.conf /etc/fail2ban/filter.d/dovecot.conf
-RUN echo "ignoreregex =" >> /etc/fail2ban/filter.d/postfix-sasl.conf && mkdir /var/run/fail2ban
+#COPY target/fail2ban/jail.conf /etc/fail2ban/jail.conf
+#COPY target/fail2ban/filter.d/dovecot.conf /etc/fail2ban/filter.d/dovecot.conf
+#RUN echo "ignoreregex =" >> /etc/fail2ban/filter.d/postfix-sasl.conf && mkdir /var/run/fail2ban
 
 # Enables Pyzor and Razor
-USER amavis
-RUN razor-admin -create && \
-  razor-admin -register && \
-  pyzor discover
-USER root
+#USER amavis
+#RUN razor-admin -create && \
+#  razor-admin -register && \
+#  pyzor discover
+#USER root
 
 # Configure DKIM (opendkim)
 # DKIM config files
@@ -185,8 +185,8 @@ RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
 RUN curl -s https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x3-cross-signed.pem
 
 COPY ./target/bin /usr/local/bin
-COPY ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/fail2ban-wrapper.sh ./target/postfix-wrapper.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
-
+COPY ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
 
 # Configure supervisor
 COPY target/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
