@@ -145,11 +145,11 @@ RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_fil
 #RUN echo "ignoreregex =" >> /etc/fail2ban/filter.d/postfix-sasl.conf && mkdir /var/run/fail2ban
 
 # Enables Pyzor and Razor
-USER amavis
-RUN razor-admin -create && \
-  razor-admin -register && \
-  pyzor discover
-USER root
+#USER amavis
+#RUN razor-admin -create && \
+#  razor-admin -register && \
+#  pyzor discover
+#USER root
 
 # Configure DKIM (opendkim)
 # DKIM config files
